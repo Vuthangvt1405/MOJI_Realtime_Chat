@@ -23,6 +23,10 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    if (!originalRequest || !originalRequest.url) {
+      return Promise.reject(error);
+    }
+
     // những api không cần check
     if (
       originalRequest.url.includes("/auth/signin") ||
@@ -34,7 +38,11 @@ api.interceptors.response.use(
 
     originalRequest._retryCount = originalRequest._retryCount || 0;
 
-    if (error.response?.status === 403 && originalRequest._retryCount < 4) {
+    const isExpiredAccessTokenError =
+      error.response?.status === 403 &&
+      error.response?.data?.message === "Access token hết hạn hoặc không đúng";
+
+    if (isExpiredAccessTokenError && originalRequest._retryCount < 4) {
       originalRequest._retryCount += 1;
 
       try {

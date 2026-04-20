@@ -1,16 +1,46 @@
+import { type MouseEvent } from "react";
 import { useFriendStore } from "@/stores/useFriendStore";
 import { DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
-import { MessageCircleMore, Users } from "lucide-react";
+import { MessageCircleMore, Trash2, Users } from "lucide-react";
 import { Card } from "../ui/card";
 import UserAvatar from "../chat/UserAvatar";
 import { useChatStore } from "@/stores/useChatStore";
+import { Button } from "../ui/button";
+import { toast } from "sonner";
 
 const FriendListModal = () => {
-  const { friends } = useFriendStore();
+  const { friends, deleteFriend, loading } = useFriendStore();
   const { createConversation } = useChatStore();
 
   const handleAddConversation = async (friendId: string) => {
     await createConversation("direct", "", [friendId]);
+  };
+
+  const handleDeleteFriend = async (
+    e: MouseEvent<HTMLButtonElement>,
+    friendId: string,
+    displayName: string
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn xóa ${displayName} khỏi danh sách bạn bè không?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await deleteFriend(friendId);
+      toast.success("Đã xóa bạn bè thành công");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Lỗi xảy ra khi xóa bạn. Hãy thử lại";
+
+      toast.error(message);
+    }
   };
 
   return (
@@ -54,6 +84,21 @@ const FriendListModal = () => {
                     @{friend.username}
                   </span>
                 </div>
+
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="ghost"
+                  title="Xóa bạn"
+                  aria-label={`Xóa bạn ${friend.displayName}`}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={(e) =>
+                    handleDeleteFriend(e, friend._id, friend.displayName)
+                  }
+                  disabled={loading}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
               </div>
             </Card>
           ))}

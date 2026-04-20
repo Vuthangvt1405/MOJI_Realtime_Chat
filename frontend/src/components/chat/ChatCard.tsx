@@ -5,6 +5,7 @@ import { MoreHorizontal } from "lucide-react";
 interface ChatCardProps {
   convoId: string;
   name: string;
+  nameTag?: React.ReactNode;
   timestamp?: Date;
   isActive: boolean;
   onSelect: (id: string) => void;
@@ -16,6 +17,7 @@ interface ChatCardProps {
 const ChatCard = ({
   convoId,
   name,
+  nameTag,
   timestamp,
   isActive,
   onSelect,
@@ -38,16 +40,19 @@ const ChatCard = ({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <h3
-              className={cn(
-                "font-semibold text-sm truncate",
-                unreadCount && unreadCount > 0 && "text-foreground"
-              )}
-            >
-              {name}
-            </h3>
+            <div className="flex items-center gap-2 min-w-0">
+              <h3
+                className={cn(
+                  "font-semibold text-sm truncate flex-1 min-w-0",
+                  unreadCount && unreadCount > 0 && "text-foreground"
+                )}
+              >
+                {name}
+              </h3>
+              {nameTag}
+            </div>
 
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground shrink-0">
               {timestamp ? formatOnlineTime(timestamp) : ""}
             </span>
           </div>

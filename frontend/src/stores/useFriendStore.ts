@@ -2,7 +2,26 @@ import { friendService } from "@/services/friendService";
 import type { FriendState } from "@/types/store";
 import { create } from "zustand";
 
-export const useFriendStore = create<FriendState>((set, get) => ({
+const getErrorMessage = (error: unknown, fallbackMessage: string) => {
+  if (typeof error === "object" && error !== null) {
+    const apiError = error as {
+      response?: { data?: { message?: string } };
+      message?: string;
+    };
+
+    if (apiError.response?.data?.message) {
+      return apiError.response.data.message;
+    }
+
+    if (apiError.message) {
+      return apiError.message;
+    }
+  }
+
+  return fallbackMessage;
+};
+
+export const useFriendStore = create<FriendState>((set) => ({
   friends: [],
   loading: false,
   receivedList: [],
@@ -11,12 +30,12 @@ export const useFriendStore = create<FriendState>((set, get) => ({
     try {
       set({ loading: true });
 
-      const user = await friendService.searchByUsername(username);
+      const users = await friendService.searchByUsername(username);
 
-      return user;
+      return users;
     } catch (error) {
       console.error("Lỗi xảy ra khi tìm user bằng username", error);
-      return null;
+      return [];
     } finally {
       set({ loading: false });
     }
@@ -28,7 +47,9 @@ export const useFriendStore = create<FriendState>((set, get) => ({
       return resultMessage;
     } catch (error) {
       console.error("Lỗi xảy ra khi addFriend", error);
-      return "Lỗi xảy ra khi gửi kết bạn. Hãy thử lại";
+      throw new Error(
+        getErrorMessage(error, "Lỗi xảy ra khi gửi kết bạn. Hãy thử lại")
+      );
     } finally {
       set({ loading: false });
     }
@@ -53,13 +74,23 @@ export const useFriendStore = create<FriendState>((set, get) => ({
   acceptRequest: async (requestId) => {
     try {
       set({ loading: true });
-      await friendService.acceptRequest(requestId);
+      const newFriend = await friendService.acceptRequest(requestId);
 
       set((state) => ({
         receivedList: state.receivedList.filter((r) => r._id !== requestId),
+        friends: newFriend
+          ? state.friends.some((friend) => friend._id === newFriend._id)
+            ? state.friends
+            : [newFriend, ...state.friends]
+          : state.friends,
       }));
     } catch (error) {
       console.error("Lỗi xảy ra khi acceptRequest", error);
+      throw new Error(
+        getErrorMessage(error, "Lỗi xảy ra khi chấp nhận kết bạn. Hãy thử lại")
+      );
+    } finally {
+      set({ loading: false });
     }
   },
   declineRequest: async (requestId) => {
@@ -84,6 +115,21 @@ export const useFriendStore = create<FriendState>((set, get) => ({
     } catch (error) {
       console.error("Lỗi xảy ra khi load friends", error);
       set({ friends: [] });
+    } finally {
+      set({ loading: false });
+    }
+  },
+  deleteFriend: async (friendId) => {
+    try {
+      set({ loading: true });
+      await friendService.deleteFriend(friendId);
+
+      set((state) => ({
+        friends: state.friends.filter((friend) => friend._id !== friendId),
+      }));
+    } catch (error) {
+      console.error("Lỗi xảy ra khi deleteFriend", error);
+      throw new Error(getErrorMessage(error, "Lỗi xảy ra khi xóa bạn. Hãy thử lại"));
     } finally {
       set({ loading: false });
     }

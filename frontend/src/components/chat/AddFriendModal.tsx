@@ -20,8 +20,8 @@ export interface IFormValues {
 }
 
 const AddFriendModal = () => {
-  const [isFound, setIsFound] = useState<boolean | null>(null);
-  const [searchUser, setSearchUser] = useState<User>();
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [searchResults, setSearchResults] = useState<User[]>([]);
   const [searchedUsername, setSearchedUsername] = useState("");
   const { loading, searchByUsername, addFriend } = useFriendStore();
 
@@ -41,32 +41,43 @@ const AddFriendModal = () => {
     const username = data.username.trim();
     if (!username) return;
 
-    setIsFound(null);
+    setSelectedUser(null);
+    setSearchResults([]);
     setSearchedUsername(username);
 
     try {
-      const foundUser = await searchByUsername(username);
-      if (foundUser) {
-        setIsFound(true);
-        setSearchUser(foundUser);
-      } else {
-        setIsFound(false);
-      }
+      const users = await searchByUsername(username);
+      setSearchResults(users);
     } catch (error) {
       console.error(error);
-      setIsFound(false);
+      setSearchResults([]);
     }
   });
 
+  const handleSelectUser = (user: User) => {
+    setSelectedUser(user);
+  };
+
   const handleSend = handleSubmit(async (data) => {
-    if (!searchUser) return;
+    if (!selectedUser) return;
 
     try {
-      const message = await addFriend(searchUser._id, data.message.trim());
+      const message = await addFriend(selectedUser._id, data.message.trim());
       toast.success(message);
 
       handleCancel();
     } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Lỗi xảy ra khi gửi kết bạn. Hãy thử lại";
+
+      if (message === "Đã có lời mời kết bạn đang chờ") {
+        toast.info(message);
+        return;
+      }
+
+      toast.error(message);
       console.error("Lỗi xảy ra khi gửi request từ form", error);
     }
   });
@@ -74,7 +85,8 @@ const AddFriendModal = () => {
   const handleCancel = () => {
     reset();
     setSearchedUsername("");
-    setIsFound(null);
+    setSelectedUser(null);
+    setSearchResults([]);
   };
 
   return (
@@ -91,29 +103,30 @@ const AddFriendModal = () => {
           <DialogTitle>Kết Bạn</DialogTitle>
         </DialogHeader>
 
-        {!isFound && (
+        {!selectedUser && (
           <>
             <SearchForm
               register={register}
               errors={errors}
               usernameValue={usernameValue}
               loading={loading}
-              isFound={isFound}
+              searchResults={searchResults}
               searchedUsername={searchedUsername}
+              onSelectUser={handleSelectUser}
               onSubmit={handleSearch}
               onCancel={handleCancel}
             />
           </>
         )}
 
-        {isFound && (
+        {selectedUser && (
           <>
             <SendFriendRequestForm
               register={register}
               loading={loading}
-              searchedUsername={searchedUsername}
+              selectedUsername={selectedUser.username}
               onSubmit={handleSend}
-              onBack={() => setIsFound(null)}
+              onBack={() => setSelectedUser(null)}
             />
           </>
         )}

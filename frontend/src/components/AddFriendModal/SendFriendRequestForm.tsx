@@ -9,7 +9,7 @@ import { UserPlus } from "lucide-react";
 interface SendRequestProps {
   register: UseFormRegister<IFormValues>;
   loading: boolean;
-  searchedUsername: string;
+  selectedUsername: string;
   onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void;
   onBack: () => void;
 }
@@ -17,7 +17,7 @@ interface SendRequestProps {
 const SendFriendRequestForm = ({
   register,
   loading,
-  searchedUsername,
+  selectedUsername,
   onSubmit,
   onBack,
 }: SendRequestProps) => {
@@ -25,8 +25,7 @@ const SendFriendRequestForm = ({
     <form onSubmit={onSubmit}>
       <div className="space-y-4">
         <span className="success-message">
-          Tìm thấy <span className="font-semibold">@{searchedUsername}</span> rồi nè
-          🎉
+          Đã chọn <span className="font-semibold">@{selectedUsername}</span>
         </span>
 
         <div className="space-y-4">

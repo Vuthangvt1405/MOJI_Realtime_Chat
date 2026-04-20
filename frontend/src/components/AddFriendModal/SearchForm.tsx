@@ -1,19 +1,22 @@
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
 import type { IFormValues } from "../chat/AddFriendModal";
+import type { User } from "@/types/user";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { DialogFooter } from "../ui/dialog";
 import { DialogClose } from "@radix-ui/react-dialog";
 import { Button } from "../ui/button";
 import { Search } from "lucide-react";
+import UserAvatar from "../chat/UserAvatar";
 
 interface SearchFormProps {
   register: UseFormRegister<IFormValues>;
   errors: FieldErrors<IFormValues>;
   loading: boolean;
   usernameValue: string;
-  isFound: boolean | null;
+  searchResults: User[];
   searchedUsername: string;
+  onSelectUser: (user: User) => void;
   onSubmit?: (e: React.FormEvent<HTMLFormElement>) => void;
   onCancel: () => void;
 }
@@ -23,11 +26,16 @@ const SearchForm = ({
   errors,
   usernameValue,
   loading,
-  isFound,
+  searchResults,
   searchedUsername,
+  onSelectUser,
   onSubmit,
   onCancel,
 }: SearchFormProps) => {
+  const normalizedUsername = usernameValue.trim();
+  const shouldShowSearchResult =
+    searchedUsername !== "" && normalizedUsername === searchedUsername;
+
   return (
     <form
       onSubmit={onSubmit}
@@ -53,9 +61,33 @@ const SearchForm = ({
           <p className="error-message">{errors.username.message}</p>
         )}
 
-        {isFound === false && (
+        {shouldShowSearchResult && searchResults.length > 0 && (
+          <div className="border rounded-lg mt-2 max-h-[220px] overflow-y-auto divide-y glass">
+            {searchResults.map((user) => (
+              <button
+                type="button"
+                key={user._id}
+                className="w-full flex items-center gap-3 p-2 cursor-pointer hover:bg-muted transition-smooth text-left"
+                onClick={() => onSelectUser(user)}
+              >
+                <UserAvatar
+                  type="chat"
+                  name={user.displayName}
+                  avatarUrl={user.avatarUrl}
+                />
+
+                <div className="flex flex-col">
+                  <span className="font-medium">{user.displayName}</span>
+                  <span className="text-sm text-muted-foreground">@{user.username}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {shouldShowSearchResult && !loading && searchResults.length === 0 && (
           <span className="error-message">
-            Không tìm thấy
+            Không tìm thấy username bắt đầu bằng{" "}
             <span className="font-semibold">@{searchedUsername}</span>
           </span>
         )}

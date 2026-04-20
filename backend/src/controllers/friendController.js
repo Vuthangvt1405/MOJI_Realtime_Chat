@@ -1,6 +1,9 @@
 import Friend from "../models/Friend.js";
 import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
+import mongoose from "mongoose";
+
+const pair = (a, b) => (a < b ? [a, b] : [b, a]);
 
 export const sendFriendRequest = async (req, res) => {
   try {
@@ -85,13 +88,14 @@ export const acceptFriendRequest = async (req, res) => {
     await FriendRequest.findByIdAndDelete(requestId);
 
     const from = await User.findById(request.from)
-      .select("_id displayName avatarUrl")
+      .select("_id username displayName avatarUrl")
       .lean();
 
     return res.status(200).json({
       message: "Chấp nhận lời mời kết bạn thành công",
       newFriend: {
         _id: from?._id,
+        username: from?.username,
         displayName: from?.displayName,
         avatarUrl: from?.avatarUrl,
       },
@@ -175,6 +179,44 @@ export const getFriendRequests = async (req, res) => {
     res.status(200).json({ sent, received });
   } catch (error) {
     console.error("Lỗi khi lấy danh sách yêu cầu kết bạn", error);
+    return res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const deleteFriend = async (req, res) => {
+  try {
+    const userId = req.user._id.toString();
+    const { friendId } = req.params;
+
+    if (!friendId || !mongoose.Types.ObjectId.isValid(friendId)) {
+      return res.status(400).json({ message: "ID bạn bè không hợp lệ" });
+    }
+
+    if (friendId === userId) {
+      return res.status(400).json({ message: "Không thể xóa chính mình" });
+    }
+
+    const [userA, userB] = pair(userId, friendId);
+
+    const removedFriend = await Friend.findOneAndDelete({ userA, userB });
+
+    if (!removedFriend) {
+      return res.status(404).json({ message: "Không tìm thấy bạn bè để xóa" });
+    }
+
+    await FriendRequest.deleteMany({
+      $or: [
+        { from: userId, to: friendId },
+        { from: friendId, to: userId },
+      ],
+    });
+
+    return res.status(200).json({
+      message: "Đã xóa bạn bè thành công",
+      removedFriendId: friendId,
+    });
+  } catch (error) {
+    console.error("Lỗi khi xóa bạn bè", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };

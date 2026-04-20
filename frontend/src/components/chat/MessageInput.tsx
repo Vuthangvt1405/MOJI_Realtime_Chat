@@ -29,8 +29,26 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
         await sendGroupMessage(selectedConvo._id, currValue);
       }
     } catch (error) {
+      setValue(currValue);
+
+      const apiError = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+
+      const message =
+        apiError.response?.data?.message ||
+        apiError.message ||
+        "Lỗi xảy ra khi gửi tin nhắn. Bạn hãy thử lại!";
+
       console.error(error);
-      toast.error("Lỗi xảy ra khi gửi tin nhắn. Bạn hãy thử lại!");
+
+      if (message === "Bạn chưa kết bạn với người này") {
+        toast.warning("Người này hiện là stranger. Bạn chưa thể gửi tin nhắn.");
+        return;
+      }
+
+      toast.error(message);
     }
   };
 

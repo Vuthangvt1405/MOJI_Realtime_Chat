@@ -22,11 +22,24 @@ export const searchUserByUsername = async (req, res) => {
       return res.status(400).json({ message: "Cần cung cấp username trong query." });
     }
 
-    const user = await User.findOne({ username }).select(
-      "_id displayName username avatarUrl"
-    );
+    const escapedUsername = username
+      .trim()
+      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      .toLowerCase();
 
-    return res.status(200).json({ user });
+    const users = await User.find({
+      _id: { $ne: req.user._id },
+      username: {
+        $regex: `^${escapedUsername}`,
+        $options: "i",
+      },
+    })
+      .select("_id displayName username avatarUrl")
+      .sort({ username: 1 })
+      .limit(8)
+      .lean();
+
+    return res.status(200).json({ users });
   } catch (error) {
     console.error("Lỗi xảy ra khi searchUserByUsername", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });

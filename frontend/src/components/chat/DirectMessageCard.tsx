@@ -7,17 +7,29 @@ import UserAvatar from "./UserAvatar";
 import StatusBadge from "./StatusBadge";
 import UnreadCountBadge from "./UnreadCountBadge";
 import { useSocketStore } from "@/stores/useSocketStore";
+import { useFriendStore } from "@/stores/useFriendStore";
+import { Badge } from "../ui/badge";
 
-const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
+const DirectMessageCard = ({
+  convo,
+  friendsReady,
+}: {
+  convo: Conversation;
+  friendsReady: boolean;
+}) => {
   const { user } = useAuthStore();
   const { activeConversationId, setActiveConversation, messages, fetchMessages } =
     useChatStore();
   const { onlineUsers } = useSocketStore();
+  const { friends } = useFriendStore();
 
   if (!user) return null;
 
   const otherUser = convo.participants.find((p) => p._id !== user._id);
   if (!otherUser) return null;
+
+  const isFriend = friends.some((friend) => friend._id === otherUser._id);
+  const showStrangerTag = friendsReady && !isFriend;
 
   const unreadCount = convo.unreadCounts[user._id];
   const lastMessage = convo.lastMessage?.content ?? "";
@@ -33,6 +45,13 @@ const DirectMessageCard = ({ convo }: { convo: Conversation }) => {
     <ChatCard
       convoId={convo._id}
       name={otherUser.displayName ?? ""}
+      nameTag={
+        showStrangerTag ? (
+          <Badge className="shrink-0 border-amber-300/80 bg-amber-100 text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/20 dark:text-amber-200">
+            stranger
+          </Badge>
+        ) : undefined
+      }
       timestamp={
         convo.lastMessage?.createdAt
           ? new Date(convo.lastMessage.createdAt)
