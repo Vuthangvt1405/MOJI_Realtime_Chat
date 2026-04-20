@@ -55,7 +55,10 @@ export const uploadAvatar = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const result = await uploadImageFromBuffer(file.buffer);
+    const result = await uploadImageFromBuffer(file.buffer, {
+      fileName: file.originalname || "avatar",
+      mimeType: file.mimetype,
+    });
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
@@ -68,8 +71,12 @@ export const uploadAvatar = async (req, res) => {
       }
     ).select("avatarUrl");
 
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     if (!updatedUser.avatarUrl) {
-      return res.status(400).json({ message: "Avatar trả về null" });
+      return res.status(502).json({ message: "Avatar URL missing from image provider" });
     }
 
     return res.status(200).json({ avatarUrl: updatedUser.avatarUrl });

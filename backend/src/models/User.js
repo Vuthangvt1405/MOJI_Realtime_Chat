@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema(
       type: String, // link CDN để hiển thị hình
     },
     avatarId: {
-      type: String, // Cloudinary public_id để xoá hình
+      type: String, // image provider id
     },
     bio: {
       type: String,
