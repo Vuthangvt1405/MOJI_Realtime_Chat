@@ -2,6 +2,7 @@ import Friend from "../models/Friend.js";
 import User from "../models/User.js";
 import FriendRequest from "../models/FriendRequest.js";
 import mongoose from "mongoose";
+import { io } from "../socket/index.js";
 
 const pair = (a, b) => (a < b ? [a, b] : [b, a]);
 
@@ -52,6 +53,21 @@ export const sendFriendRequest = async (req, res) => {
       from,
       to,
       message,
+    });
+
+    io.to(to.toString()).emit("friend-request:new", {
+      request: {
+        _id: request._id,
+        from: {
+          _id: req.user._id,
+          username: req.user.username,
+          displayName: req.user.displayName,
+          avatarUrl: req.user.avatarUrl,
+        },
+        message: request.message ?? "",
+        createdAt: request.createdAt,
+        updatedAt: request.updatedAt,
+      },
     });
 
     return res

@@ -31,7 +31,7 @@ const DirectMessageCard = ({
   const isFriend = friends.some((friend) => friend._id === otherUser._id);
   const showStrangerTag = friendsReady && !isFriend;
 
-  const unreadCount = convo.unreadCounts[user._id];
+  const unreadCount = convo.unreadCounts[user._id] ?? 0;
   const lastMessage = convo.lastMessage?.content ?? "";
 
   const handleSelectConversation = async (id: string) => {
@@ -79,7 +79,9 @@ const DirectMessageCard = ({
         <p
           className={cn(
             "text-sm truncate",
-            unreadCount > 0 ? "font-medium text-foreground" : "text-muted-foreground"
+            unreadCount > 0
+              ? "font-bold text-black dark:text-white"
+              : "text-muted-foreground"
           )}
         >
           {lastMessage}

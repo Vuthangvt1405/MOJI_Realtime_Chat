@@ -18,14 +18,43 @@ import {
 } from "@/components/ui/sidebar";
 import type { User } from "@/types/user";
 import Logout from "../auth/Logout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FriendRequestDialog from "../friendRequest/FriendRequestDialog";
 import ProfileDialog from "../profile/ProfileDialog";
+import { useSocketStore } from "@/stores/useSocketStore";
+import { useFriendStore } from "@/stores/useFriendStore";
 
 export function NavUser({ user }: { user: User }) {
   const { isMobile } = useSidebar();
   const [friendRequestOpen, setfriendRequestOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [hasUnreadFriendRequest, setHasUnreadFriendRequest] = useState(false);
+  const { socket } = useSocketStore();
+  const { getAllFriendRequests } = useFriendStore();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewFriendRequest = () => {
+      if (friendRequestOpen) {
+        void getAllFriendRequests();
+        return;
+      }
+
+      setHasUnreadFriendRequest(true);
+    };
+
+    socket.on("friend-request:new", handleNewFriendRequest);
+
+    return () => {
+      socket.off("friend-request:new", handleNewFriendRequest);
+    };
+  }, [socket, friendRequestOpen, getAllFriendRequests]);
+
+  const handleOpenFriendRequestDialog = () => {
+    setHasUnreadFriendRequest(false);
+    setfriendRequestOpen(true);
+  };
 
   return (
     <>
@@ -37,15 +66,20 @@ export function NavUser({ user }: { user: User }) {
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage
-                    src={user.avatarUrl}
-                    alt={user.displayName}
-                  />
-                  <AvatarFallback className="rounded-lg">
-                    {user.displayName.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarImage
+                      src={user.avatarUrl}
+                      alt={user.displayName}
+                    />
+                    <AvatarFallback className="rounded-lg">
+                      {user.displayName.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {hasUnreadFriendRequest && (
+                    <span className="absolute top-0 right-0 size-2 rounded-full bg-destructive ring-2 ring-background" />
+                  )}
+                </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.displayName}</span>
                   <span className="truncate text-xs">{user.username}</span>
@@ -82,7 +116,7 @@ export function NavUser({ user }: { user: User }) {
                   <UserIcon className="text-muted-foreground dark:group-focus:!text-accent-foreground" />
                   Tài Khoản
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setfriendRequestOpen(true)}>
+                <DropdownMenuItem onClick={handleOpenFriendRequestDialog}>
                   <Bell className="text-muted-foreground dark:group-focus:!text-accent-foreground" />
                   Thông Báo
                 </DropdownMenuItem>

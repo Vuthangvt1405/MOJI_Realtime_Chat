@@ -20,6 +20,8 @@ const FriendRequestDialog = ({ open, setOpen }: FriendRequestDialogProps) => {
   const { getAllFriendRequests } = useFriendStore();
 
   useEffect(() => {
+    if (!open) return;
+
     const loadRequest = async () => {
       try {
         await getAllFriendRequests();
@@ -28,8 +30,8 @@ const FriendRequestDialog = ({ open, setOpen }: FriendRequestDialogProps) => {
       }
     };
 
-    loadRequest();
-  }, []);
+    void loadRequest();
+  }, [open, getAllFriendRequests]);
 
   return (
     <Dialog
