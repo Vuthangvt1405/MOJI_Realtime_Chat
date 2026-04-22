@@ -123,7 +123,7 @@ export const getConversations = async (req, res) => {
       }));
 
       return {
-        ...convo.toObject(),
+        ...convo.toJSON(),
         unreadCounts: convo.unreadCounts || {},
         participants,
       };
