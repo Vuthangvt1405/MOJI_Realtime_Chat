@@ -51,17 +51,17 @@ export interface ChatState {
   sendDirectMessage: (
     recipientId: string,
     content: string,
-    imgUrl?: string,
+    imgUrls?: string[],
   ) => Promise<void>;
   sendGroupMessage: (
     conversationId: string,
     content: string,
-    imgUrl?: string,
+    imgUrls?: string[],
   ) => Promise<void>;
   // add message
   addMessage: (message: Message) => Promise<void>;
   // update convo
-  updateConversation: (conversation: unknown) => void;
+  updateConversation: (conversation: Partial<Conversation>) => void;
   markAsSeen: () => Promise<void>;
   addConvo: (convo: Conversation) => void;
   createConversation: (

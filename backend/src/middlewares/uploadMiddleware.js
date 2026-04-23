@@ -14,7 +14,7 @@ const toHttpsUrl = (url) => {
 export const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 1024 * 1024 * 1, // 1MB
+    fileSize: 1024 * 1024 * 5, // 5MB
   },
 });
 
@@ -34,7 +34,7 @@ export const uploadImageFromBuffer = async (buffer, options = {}) => {
     new Blob([buffer], {
       type: options.mimeType || "application/octet-stream",
     }),
-    options.fileName || "avatar"
+    options.fileName || "avatar",
   );
 
   const response = await fetch(FREEIMAGE_UPLOAD_URL, {
@@ -53,20 +53,28 @@ export const uploadImageFromBuffer = async (buffer, options = {}) => {
   const statusCode = Number(payload?.status_code ?? response.status);
 
   if (!response.ok || payload?.error || statusCode >= 400) {
-    const message = payload?.error?.message || payload?.status_txt || "Image upload failed";
+    const message =
+      payload?.error?.message || payload?.status_txt || "Image upload failed";
     throw new Error(message);
   }
 
   const image = payload?.image;
 
   if (!image) {
-    throw new Error("Freeimage response missing image payload");
+    throw new Error("Freeimage response missing uploaded image URL");
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.log(
+      "[Freeimage Debug] image object:",
+      JSON.stringify(image, null, 2),
+    );
   }
 
   const secureUrl =
-    toHttpsUrl(image?.thumb?.url) ||
+    toHttpsUrl(image?.url) ||
     toHttpsUrl(image?.display_url) ||
-    toHttpsUrl(image?.url);
+    toHttpsUrl(image?.thumb?.url);
 
   if (!secureUrl) {
     throw new Error("Freeimage response missing uploaded image URL");

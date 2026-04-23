@@ -50,6 +50,7 @@ export interface Message {
   senderId: string;
   content: string | null;
   imgUrl?: string | null;
+  imgUrls?: string[];
   updatedAt?: string | null;
   createdAt: string;
   isOwn?: boolean;

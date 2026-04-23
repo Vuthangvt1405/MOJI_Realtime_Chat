@@ -22,16 +22,24 @@ export const chatService = {
     return { messages: res.data.messages, cursor: res.data.nextCursor };
   },
 
+  async uploadMessageImage(formData: FormData) {
+    const res = await api.post("/messages/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    return res.data;
+  },
+
   async sendDirectMessage(
     recipientId: string,
     content: string = "",
-    imgUrl?: string,
+    imgUrls?: string[],
     conversationId?: string
   ) {
     const res = await api.post("/messages/direct", {
       recipientId,
       content,
-      imgUrl,
+      imgUrls,
       conversationId,
     });
 
@@ -41,12 +49,12 @@ export const chatService = {
   async sendGroupMessage(
     conversationId: string,
     content: string = "",
-    imgUrl?: string
+    imgUrls?: string[]
   ) {
     const res = await api.post("/messages/group", {
       conversationId,
       content,
-      imgUrl,
+      imgUrls,
     });
     return res.data.message;
   },

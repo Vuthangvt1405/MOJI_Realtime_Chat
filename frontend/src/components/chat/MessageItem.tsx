@@ -33,6 +33,14 @@ const MessageItem = ({
     (p: Participant) => p._id.toString() === message.senderId.toString()
   );
 
+  const imageUrls = (
+    Array.isArray(message.imgUrls) && message.imgUrls.length > 0
+      ? message.imgUrls
+      : message.imgUrl
+        ? [message.imgUrl]
+        : []
+  ).filter((url): url is string => typeof url === "string" && url.trim() !== "");
+
   return (
     <>
       {/* time */}
@@ -74,7 +82,36 @@ const MessageItem = ({
               message.isOwn ? "chat-bubble-sent border-0" : "chat-bubble-received"
             )}
           >
-            <p className="text-sm leading-relaxed break-words">{message.content}</p>
+            <div className="space-y-2">
+              {imageUrls.length > 0 && (
+                <div
+                  className={cn(
+                    "grid gap-1.5",
+                    imageUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                  )}
+                >
+                  {imageUrls.map((url, imageIndex) => (
+                    <a
+                      key={`${message._id}-image-${imageIndex}`}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block overflow-hidden rounded-md"
+                    >
+                      <img
+                        src={url}
+                        alt={`attachment-${imageIndex + 1}`}
+                        className="h-auto w-full"
+                      />
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              {message.content && (
+                <p className="text-sm leading-relaxed break-words">{message.content}</p>
+              )}
+            </div>
           </Card>
 
           {/* seen/ delivered */}
