@@ -1,87 +1,51 @@
-import { uploadImageFromBuffer } from "../middlewares/uploadMiddleware.js";
-import User from "../models/User.js";
+import { getContainer } from "../app/container.js";
+import { handleError } from "../shared/http/handleError.js";
 
 export const authMe = async (req, res) => {
   try {
-    const user = req.user; // lấy từ authMiddleware
+    const { useCases } = getContainer();
+    const response = await useCases.authMe({ user: req.user });
 
-    return res.status(200).json({
-      user,
-    });
+    return res.status(200).json(response);
   } catch (error) {
-    console.error("Lỗi khi gọi authMe", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    return handleError(res, error, {
+      logMessage: "Lỗi khi gọi authMe",
+      fallbackMessage: "Lỗi hệ thống",
+    });
   }
 };
 
 export const searchUserByUsername = async (req, res) => {
   try {
     const { username } = req.query;
+    const { useCases } = getContainer();
+    const response = await useCases.searchUserByUsername({
+      username,
+      currentUserId: req.user._id,
+    });
 
-    if (!username || username.trim() === "") {
-      return res.status(400).json({ message: "Cần cung cấp username trong query." });
-    }
-
-    const escapedUsername = username
-      .trim()
-      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-      .toLowerCase();
-
-    const users = await User.find({
-      _id: { $ne: req.user._id },
-      username: {
-        $regex: `^${escapedUsername}`,
-        $options: "i",
-      },
-    })
-      .select("_id displayName username avatarUrl")
-      .sort({ username: 1 })
-      .limit(8)
-      .lean();
-
-    return res.status(200).json({ users });
+    return res.status(200).json(response);
   } catch (error) {
-    console.error("Lỗi xảy ra khi searchUserByUsername", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    return handleError(res, error, {
+      logMessage: "Lỗi xảy ra khi searchUserByUsername",
+      fallbackMessage: "Lỗi hệ thống",
+    });
   }
 };
 
 export const uploadAvatar = async (req, res) => {
   try {
-    const file = req.file;
-    const userId = req.user._id;
-
-    if (!file) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
-
-    const result = await uploadImageFromBuffer(file.buffer, {
-      fileName: file.originalname || "avatar",
-      mimeType: file.mimetype,
+    const { useCases } = getContainer();
+    const response = await useCases.uploadAvatar({
+      file: req.file,
+      userId: req.user._id,
     });
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      {
-        avatarUrl: result.secure_url,
-        avatarId: result.public_id,
-      },
-      {
-        new: true,
-      }
-    ).select("avatarUrl");
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (!updatedUser.avatarUrl) {
-      return res.status(502).json({ message: "Avatar URL missing from image provider" });
-    }
-
-    return res.status(200).json({ avatarUrl: updatedUser.avatarUrl });
+    return res.status(200).json(response);
   } catch (error) {
-    console.error("Lỗi xảy ra khi upload avatar", error);
-    return res.status(500).json({ message: "Upload failed" });
+    return handleError(res, error, {
+      logMessage: "Lỗi xảy ra khi upload avatar",
+      fallbackMessage: "Upload failed",
+    });
   }
 };
