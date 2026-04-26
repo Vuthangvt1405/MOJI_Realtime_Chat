@@ -44,6 +44,7 @@ export const getMessages = async (req, res) => {
     const { useCases } = getContainer();
     const response = await useCases.getMessages({
       conversationId,
+      userId: req.user._id,
       limit,
       cursor,
     });
@@ -81,6 +82,24 @@ export const markAsSeen = async (req, res) => {
   } catch (error) {
     return handleError(res, error, {
       logMessage: "Lỗi khi mark as seen",
+      fallbackMessage: "Lỗi hệ thống",
+    });
+  }
+};
+
+export const clearConversationForUser = async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { useCases } = getContainer();
+    const response = await useCases.clearConversationForUser({
+      conversationId,
+      userId: req.user._id,
+    });
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return handleError(res, error, {
+      logMessage: "Lỗi khi clear conversation cho user",
       fallbackMessage: "Lỗi hệ thống",
     });
   }

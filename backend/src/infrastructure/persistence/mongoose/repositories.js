@@ -25,6 +25,7 @@ const mapConversationParticipants = (conversation) =>
     displayName: participant.userId?.displayName,
     avatarUrl: participant.userId?.avatarUrl ?? null,
     joinedAt: participant.joinedAt,
+    clearedAt: participant.clearedAt ?? null,
   }));
 
 export const repositories = {
@@ -75,6 +76,7 @@ export const repositories = {
   },
 
   async listConversationsForUser(userId) {
+    const currentUserId = userId.toString();
     const conversations = await Conversation.find({
       "participants.userId": userId,
     })
@@ -92,22 +94,70 @@ export const repositories = {
         select: "displayName avatarUrl",
       });
 
-    return conversations.map((conversation) => {
-      const rawConversation = conversation.toJSON();
+    return conversations
+      .filter((conversation) => {
+        const participant = conversation.participants.find((item) => {
+          const participantId = item.userId?._id?.toString?.() || item.userId?.toString?.();
+          return participantId === currentUserId;
+        });
 
-      return {
-        ...rawConversation,
-        unreadCounts: normalizeUnreadCounts(conversation.unreadCounts),
-        participants: mapConversationParticipants(conversation),
-      };
-    });
+        const clearedAt = participant?.clearedAt ? new Date(participant.clearedAt) : null;
+
+        if (!clearedAt) {
+          return true;
+        }
+
+        if (!conversation.lastMessageAt) {
+          return false;
+        }
+
+        return new Date(conversation.lastMessageAt) > clearedAt;
+      })
+      .map((conversation) => {
+        const rawConversation = conversation.toJSON();
+
+        return {
+          ...rawConversation,
+          unreadCounts: normalizeUnreadCounts(conversation.unreadCounts),
+          participants: mapConversationParticipants(conversation),
+        };
+      });
   },
 
-  async listMessages(conversationId, limit = 50, cursor = null) {
+  async listMessages({ conversationId, userId, limit = 50, cursor = null }) {
+    const conversation = await Conversation.findOne(
+      {
+        _id: conversationId,
+        "participants.userId": userId,
+      },
+      {
+        participants: 1,
+      },
+    );
+
+    if (!conversation) {
+      return null;
+    }
+
+    const participant = conversation.participants.find(
+      (item) => item.userId.toString() === userId.toString(),
+    );
+
+    const clearedAt = participant?.clearedAt ? new Date(participant.clearedAt) : null;
+
     const query = { conversationId };
+    const createdAtQuery = {};
 
     if (cursor) {
-      query.createdAt = { $lt: new Date(cursor) };
+      createdAtQuery.$lt = new Date(cursor);
+    }
+
+    if (clearedAt) {
+      createdAtQuery.$gt = clearedAt;
+    }
+
+    if (Object.keys(createdAtQuery).length > 0) {
+      query.createdAt = createdAtQuery;
     }
 
     let messages = await Message.find(query)
@@ -146,6 +196,22 @@ export const repositories = {
       {
         $addToSet: { seenBy: userId },
         $set: { [`unreadCounts.${userId}`]: 0 },
+      },
+      { new: true },
+    );
+  },
+
+  async clearConversationForUser(conversationId, userId, clearedAt = new Date()) {
+    return Conversation.findOneAndUpdate(
+      {
+        _id: conversationId,
+        "participants.userId": userId,
+      },
+      {
+        $set: {
+          "participants.$.clearedAt": clearedAt,
+          [`unreadCounts.${userId}`]: 0,
+        },
       },
       { new: true },
     );

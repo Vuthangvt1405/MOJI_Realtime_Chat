@@ -32,6 +32,14 @@ export const useChatStore = create<ChatState>()(
           const { conversations } = await chatService.fetchConversations();
 
           set({ conversations, convoLoading: false });
+
+          const socket = useSocketStore.getState().socket;
+
+          if (socket) {
+            conversations.forEach((conversation) => {
+              socket.emit("join-conversation", conversation._id);
+            });
+          }
         } catch (error) {
           console.error("Lỗi xảy ra khi fetchConversations:", error);
           set({ convoLoading: false });
@@ -199,6 +207,28 @@ export const useChatStore = create<ChatState>()(
           }));
         } catch (error) {
           console.error("Lỗi xảy ra khi gọi markAsSeen trong store", error);
+        }
+      },
+      clearConversation: async (conversationId) => {
+        try {
+          await chatService.clearConversation(conversationId);
+
+          set((state) => {
+            const nextMessages = { ...state.messages };
+            delete nextMessages[conversationId];
+
+            return {
+              conversations: state.conversations.filter((c) => c._id !== conversationId),
+              messages: nextMessages,
+              activeConversationId:
+                state.activeConversationId === conversationId
+                  ? null
+                  : state.activeConversationId,
+            };
+          });
+        } catch (error) {
+          console.error("Lỗi xảy ra khi clear conversation trong store", error);
+          throw error;
         }
       },
       addConvo: (convo) => {

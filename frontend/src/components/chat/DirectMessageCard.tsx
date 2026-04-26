@@ -9,6 +9,7 @@ import UnreadCountBadge from "./UnreadCountBadge";
 import { useSocketStore } from "@/stores/useSocketStore";
 import { useFriendStore } from "@/stores/useFriendStore";
 import { Badge } from "../ui/badge";
+import { toast } from "sonner";
 
 const DirectMessageCard = ({
   convo,
@@ -18,8 +19,13 @@ const DirectMessageCard = ({
   friendsReady: boolean;
 }) => {
   const { user } = useAuthStore();
-  const { activeConversationId, setActiveConversation, messages, fetchMessages } =
-    useChatStore();
+  const {
+    activeConversationId,
+    setActiveConversation,
+    messages,
+    fetchMessages,
+    clearConversation,
+  } = useChatStore();
   const { onlineUsers } = useSocketStore();
   const { friends } = useFriendStore();
 
@@ -38,6 +44,33 @@ const DirectMessageCard = ({
     setActiveConversation(id);
     if (!messages[id]) {
       await fetchMessages();
+    }
+  };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    const confirmed = window.confirm(
+      `Xóa đoạn chat với ${otherUser.displayName} ở phía bạn?\n\nTin nhắn cũ sẽ bị ẩn cho bạn cho đến khi có tin nhắn mới.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await clearConversation(conversationId);
+      toast.success("Đã xóa đoạn chat ở phía bạn");
+    } catch (error) {
+      const apiError = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+
+      const message =
+        apiError.response?.data?.message ||
+        apiError.message ||
+        "Lỗi xảy ra khi xóa đoạn chat. Hãy thử lại";
+
+      toast.error(message);
     }
   };
 
@@ -87,6 +120,7 @@ const DirectMessageCard = ({
           {lastMessage}
         </p>
       }
+      onDelete={handleDeleteConversation}
     />
   );
 };

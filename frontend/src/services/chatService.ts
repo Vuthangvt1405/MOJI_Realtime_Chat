@@ -64,6 +64,11 @@ export const chatService = {
     return res.data;
   },
 
+  async clearConversation(conversationId: string) {
+    const res = await api.patch(`/conversations/${conversationId}/clear`);
+    return res.data;
+  },
+
   async createConversation(
     type: "direct" | "group",
     name: string,

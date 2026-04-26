@@ -48,8 +48,19 @@ export const makeConversationUseCases = ({ repositories, socketGateway }) => ({
     return { conversations };
   },
 
-  async getMessages({ conversationId, limit, cursor }) {
-    return repositories.listMessages(conversationId, limit, cursor);
+  async getMessages({ conversationId, userId, limit, cursor }) {
+    const response = await repositories.listMessages({
+      conversationId,
+      userId,
+      limit,
+      cursor,
+    });
+
+    if (!response) {
+      throw new AppError(404, "Conversation không tồn tại hoặc bạn không có quyền truy cập");
+    }
+
+    return response;
   },
 
   async getUserConversationsForSocketIO({ userId }) {
@@ -95,6 +106,24 @@ export const makeConversationUseCases = ({ repositories, socketGateway }) => ({
       message: "Marked as seen",
       seenBy: updatedConversation?.seenBy || [],
       myUnreadCount,
+    };
+  },
+
+  async clearConversationForUser({ conversationId, userId }) {
+    const clearedAt = new Date();
+    const clearedConversation = await repositories.clearConversationForUser(
+      conversationId,
+      userId,
+      clearedAt,
+    );
+
+    if (!clearedConversation) {
+      throw new AppError(404, "Conversation không tồn tại hoặc bạn không có quyền truy cập");
+    }
+
+    return {
+      message: "Conversation đã được xóa ở phía bạn",
+      clearedAt: clearedAt.toISOString(),
     };
   },
 });

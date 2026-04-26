@@ -4,11 +4,17 @@ import type { Conversation } from "@/types/chat";
 import ChatCard from "./ChatCard";
 import UnreadCountBadge from "./UnreadCountBadge";
 import GroupChatAvatar from "./GroupChatAvatar";
+import { toast } from "sonner";
 
 const GroupChatCard = ({ convo }: { convo: Conversation }) => {
   const { user } = useAuthStore();
-  const { activeConversationId, setActiveConversation, messages, fetchMessages } =
-    useChatStore();
+  const {
+    activeConversationId,
+    setActiveConversation,
+    messages,
+    fetchMessages,
+    clearConversation,
+  } = useChatStore();
 
   if (!user) return null;
 
@@ -18,6 +24,33 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
     setActiveConversation(id);
     if (!messages[id]) {
       await fetchMessages();
+    }
+  };
+
+  const handleDeleteConversation = async (conversationId: string) => {
+    const confirmed = window.confirm(
+      `Xóa đoạn chat nhóm \"${name}\" ở phía bạn?\n\nTin nhắn cũ sẽ bị ẩn cho bạn cho đến khi có tin nhắn mới.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await clearConversation(conversationId);
+      toast.success("Đã xóa đoạn chat ở phía bạn");
+    } catch (error) {
+      const apiError = error as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+
+      const message =
+        apiError.response?.data?.message ||
+        apiError.message ||
+        "Lỗi xảy ra khi xóa đoạn chat. Hãy thử lại";
+
+      toast.error(message);
     }
   };
 
@@ -47,6 +80,7 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
           {convo.participants.length} thành viên
         </p>
       }
+      onDelete={handleDeleteConversation}
     />
   );
 };

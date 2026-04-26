@@ -1,6 +1,12 @@
 import { Card } from "@/components/ui/card";
 import { formatOnlineTime, cn } from "@/lib/utils";
-import { MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Trash2 } from "lucide-react";
 
 interface ChatCardProps {
   convoId: string;
@@ -12,6 +18,7 @@ interface ChatCardProps {
   unreadCount?: number;
   leftSection: React.ReactNode;
   subtitle: React.ReactNode;
+  onDelete?: (id: string) => Promise<void> | void;
 }
 
 const ChatCard = ({
@@ -24,12 +31,13 @@ const ChatCard = ({
   unreadCount,
   leftSection,
   subtitle,
+  onDelete,
 }: ChatCardProps) => {
   return (
     <Card
       key={convoId}
       className={cn(
-        "border-none p-3 cursor-pointer transition-smooth glass hover:bg-muted/30",
+        "group border-none p-3 cursor-pointer transition-smooth glass hover:bg-muted/30",
         isActive &&
           "ring-2 ring-primary/50 bg-gradient-to-tr from-primary-glow/10 to-primary-foreground"
       )}
@@ -59,7 +67,45 @@ const ChatCard = ({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 flex-1 min-w-0">{subtitle}</div>
-            <MoreHorizontal className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 hover:size-5 transition-smooth" />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="rounded-sm p-1"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                  }}
+                  aria-label={`Tùy chọn đoạn chat ${name}`}
+                >
+                  <MoreHorizontal className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 hover:size-5 transition-smooth" />
+                </button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent
+                align="end"
+                onClick={(event) => {
+                  event.stopPropagation();
+                }}
+              >
+                <DropdownMenuItem
+                  variant="destructive"
+                  disabled={!onDelete}
+                  onSelect={(event) => {
+                    event.stopPropagation();
+
+                    if (!onDelete) {
+                      return;
+                    }
+
+                    void onDelete(convoId);
+                  }}
+                >
+                  <Trash2 className="text-muted-foreground dark:group-focus:!text-accent-foreground" />
+                  Xóa đoạn chat
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

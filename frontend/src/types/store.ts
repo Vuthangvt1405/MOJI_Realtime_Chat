@@ -63,6 +63,7 @@ export interface ChatState {
   // update convo
   updateConversation: (conversation: Partial<Conversation>) => void;
   markAsSeen: () => Promise<void>;
+  clearConversation: (conversationId: string) => Promise<void>;
   addConvo: (convo: Conversation) => void;
   createConversation: (
     type: "group" | "direct",

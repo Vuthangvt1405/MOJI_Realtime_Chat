@@ -183,7 +183,9 @@ const MessageInput = ({ selectedConvo }: { selectedConvo: Conversation }) => {
     );
 
     const imageUrls = attachments
-      .filter((attachment) => attachment.status === "uploaded" && attachment.imgUrl)
+      .filter(
+        (attachment) => attachment.status === "uploaded" && attachment.imgUrl,
+      )
       .map((attachment) => attachment.imgUrl as string);
 
     if (hasUploadingImage) {
