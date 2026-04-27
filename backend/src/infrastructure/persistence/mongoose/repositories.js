@@ -182,6 +182,14 @@ export const repositories = {
     return Conversation.findById(conversationId);
   },
 
+  async isDirectConversationBetweenUsers(conversationId, userAId, userBId) {
+    return Conversation.exists({
+      _id: conversationId,
+      type: "direct",
+      "participants.userId": { $all: [userAId, userBId] },
+    });
+  },
+
   async saveConversation(conversation) {
     return conversation.save();
   },

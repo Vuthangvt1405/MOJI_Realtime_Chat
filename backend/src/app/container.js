@@ -1,4 +1,5 @@
 import { makeAuthUseCases } from "../application/auth/authUseCases.js";
+import { makeCallUseCases } from "../application/call/callUseCases.js";
 import { makeConversationUseCases } from "../application/chat/conversationUseCases.js";
 import { makeMessageUseCases } from "../application/chat/messageUseCases.js";
 import { makeFriendUseCases } from "../application/friend/friendUseCases.js";
@@ -35,6 +36,10 @@ const createUseCases = () => {
     securityServices,
   });
 
+  const callUseCases = makeCallUseCases({
+    repositories,
+  });
+
   const userUseCases = makeUserUseCases({
     repositories,
     imageGateway: freeImageGateway,
@@ -45,6 +50,7 @@ const createUseCases = () => {
     ...messageUseCases,
     ...friendUseCases,
     ...authUseCases,
+    ...callUseCases,
     ...userUseCases,
   };
 };

@@ -7,13 +7,16 @@ import UserAvatar from "./UserAvatar";
 import StatusBadge from "./StatusBadge";
 import GroupChatAvatar from "./GroupChatAvatar";
 import { useSocketStore } from "@/stores/useSocketStore";
+import { useFriendStore } from "@/stores/useFriendStore";
+import CallButton from "@/features/call/components/CallButton";
 
 const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
   const { conversations, activeConversationId } = useChatStore();
   const { user } = useAuthStore();
   const { onlineUsers } = useSocketStore();
+  const { friends, friendsLoaded } = useFriendStore();
 
-  let otherUser;
+  let otherUser: Conversation["participants"][number] | null = null;
 
   chat = chat ?? conversations.find((c) => c._id === activeConversationId);
 
@@ -32,6 +35,12 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
     if (!user || !otherUser) return;
   }
 
+  const isDirectChat = chat.type === "direct";
+  const isPeerOnline = isDirectChat && onlineUsers.includes(otherUser?._id ?? "");
+  const isFriend = isDirectChat
+    ? friends.some((friend) => friend._id === (otherUser?._id ?? ""))
+    : false;
+
   return (
     <header className="sticky top-0 z-10 px-4 py-2 flex items-center bg-background">
       <div className="flex items-center gap-2 w-full">
@@ -41,35 +50,38 @@ const ChatWindowHeader = ({ chat }: { chat?: Conversation }) => {
           className="mr-2 data-[orientation=vertical]:h-4"
         />
 
-        <div className="p-2 w-full flex items-center gap-3">
-          {/* avatar */}
-          <div className="relative">
-            {chat.type === "direct" ? (
-              <>
-                <UserAvatar
-                  type={"sidebar"}
-                  name={otherUser?.displayName || "Moji"}
-                  avatarUrl={otherUser?.avatarUrl || undefined}
+        <div className="p-2 w-full flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative">
+              {chat.type === "direct" ? (
+                <>
+                  <UserAvatar
+                    type={"sidebar"}
+                    name={otherUser?.displayName || "Moji"}
+                    avatarUrl={otherUser?.avatarUrl || undefined}
+                  />
+                  <StatusBadge status={isPeerOnline ? "online" : "offline"} />
+                </>
+              ) : (
+                <GroupChatAvatar
+                  participants={chat.participants}
+                  type="sidebar"
                 />
-                {/* todo: socket io */}
-                <StatusBadge
-                  status={
-                    onlineUsers.includes(otherUser?._id ?? "") ? "online" : "offline"
-                  }
-                />
-              </>
-            ) : (
-              <GroupChatAvatar
-                participants={chat.participants}
-                type="sidebar"
-              />
-            )}
+              )}
+            </div>
+
+            <h2 className="truncate font-semibold text-foreground">
+              {chat.type === "direct" ? otherUser?.displayName : chat.group?.name}
+            </h2>
           </div>
 
-          {/* name */}
-          <h2 className="font-semibold text-foreground">
-            {chat.type === "direct" ? otherUser?.displayName : chat.group?.name}
-          </h2>
+          {isDirectChat && friendsLoaded && isFriend && otherUser && (
+            <CallButton
+              conversationId={chat._id}
+              peerUserId={otherUser._id}
+              isOnline={isPeerOnline}
+            />
+          )}
         </div>
       </div>
     </header>

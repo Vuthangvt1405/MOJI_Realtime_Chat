@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router";
+import CallProvider from "@/features/call/CallProvider";
 
 const ProtectedRoute = () => {
   const { accessToken, user, loading, refresh, fetchMe } = useAuthStore();
@@ -40,7 +41,12 @@ const ProtectedRoute = () => {
     );
   }
 
-  return <Outlet></Outlet>;
+  return (
+    <>
+      <CallProvider />
+      <Outlet />
+    </>
+  );
 };
 
 export default ProtectedRoute;
