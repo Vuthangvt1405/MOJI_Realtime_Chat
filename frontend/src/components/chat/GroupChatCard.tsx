@@ -29,7 +29,7 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
 
   const handleDeleteConversation = async (conversationId: string) => {
     const confirmed = window.confirm(
-      `Xóa đoạn chat nhóm \"${name}\" ở phía bạn?\n\nTin nhắn cũ sẽ bị ẩn cho bạn cho đến khi có tin nhắn mới.`,
+      `Xóa đoạn chat nhóm "${name}" ở phía bạn?\n\nTin nhắn cũ sẽ bị ẩn cho bạn cho đến khi có tin nhắn mới.`,
     );
 
     if (!confirmed) {

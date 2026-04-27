@@ -2,7 +2,10 @@
 /*
 !/backend/
 !/frontend/
+!/.github/
+!/.github/workflows/
 !/.gitignore
+!/README.md
 
 # Dependencies and build output
 **/node_modules/
