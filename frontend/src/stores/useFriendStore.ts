@@ -23,6 +23,7 @@ const getErrorMessage = (error: unknown, fallbackMessage: string) => {
 
 export const useFriendStore = create<FriendState>((set) => ({
   friends: [],
+  friendsLoaded: false,
   loading: false,
   receivedList: [],
   sentList: [],
@@ -111,10 +112,10 @@ export const useFriendStore = create<FriendState>((set) => ({
     try {
       set({ loading: true });
       const friends = await friendService.getFriendList();
-      set({ friends: friends });
+      set({ friends, friendsLoaded: true });
     } catch (error) {
       console.error("Lỗi xảy ra khi load friends", error);
-      set({ friends: [] });
+      set({ friends: [], friendsLoaded: true });
     } finally {
       set({ loading: false });
     }
