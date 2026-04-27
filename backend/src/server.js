@@ -11,7 +11,12 @@ import { protectedRoute } from "./middlewares/authMiddleware.js";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import fs from "fs";
-import { app, server, setSocketConversationResolver } from "./socket/index.js";
+import {
+  app,
+  server,
+  setSocketCallEligibilityResolver,
+  setSocketConversationResolver,
+} from "./socket/index.js";
 import { getContainer } from "./app/container.js";
 
 dotenv.config();
@@ -42,6 +47,14 @@ app.use("/api/conversations", conversationRoute);
 const { useCases } = getContainer();
 setSocketConversationResolver(async (userId) =>
   useCases.getUserConversationsForSocketIO({ userId }),
+);
+
+setSocketCallEligibilityResolver(async ({ callerId, calleeId, conversationId }) =>
+  useCases.validateCallRequest({
+    callerId,
+    calleeId,
+    conversationId,
+  }),
 );
 
 connectDB().then(() => {

@@ -81,6 +81,7 @@ export interface SocketState {
 
 export interface FriendState {
   friends: Friend[];
+  friendsLoaded: boolean;
   loading: boolean;
   receivedList: FriendRequest[];
   sentList: FriendRequest[];
