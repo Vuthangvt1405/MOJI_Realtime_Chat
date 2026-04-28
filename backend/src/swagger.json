@@ -115,6 +115,95 @@
         "responses": {}
       }
     },
+    "/auth/forgot-password": {
+      "post": {
+        "summary": "ForgotPassword",
+        "description": "Gửi liên kết đặt lại mật khẩu nếu email tồn tại. Phản hồi luôn giống nhau để tránh lộ email đăng ký.",
+        "tags": ["Authentication"],
+        "responses": {
+          "200": {
+            "description": "Password reset email accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Nếu email tồn tại, chúng tôi đã gửi liên kết đặt lại mật khẩu."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid input" },
+          "500": { "description": "Internal server error" }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                },
+                "required": ["email"]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "summary": "ResetPassword",
+        "description": "Đặt lại mật khẩu bằng token một lần từ email và thu hồi các phiên đăng nhập cũ.",
+        "tags": ["Authentication"],
+        "responses": {
+          "200": {
+            "description": "Password reset successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Đặt lại mật khẩu thành công."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid or expired token" },
+          "500": { "description": "Internal server error" }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                },
+                "required": ["token", "newPassword"]
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/me": {
       "get": {
         "summary": "AuthMe",

@@ -1,17 +1,23 @@
 export const updateConversationAfterCreateMessage = (
   conversation,
   message,
-  senderId
+  senderId,
 ) => {
   const imageCount = Array.isArray(message.imgUrls)
-    ? message.imgUrls.filter((url) => typeof url === "string" && url.trim() !== "").length
+    ? message.imgUrls.filter(
+        (url) => typeof url === "string" && url.trim() !== "",
+      ).length
     : message.imgUrl
       ? 1
       : 0;
 
   const previewContent =
     message.content ||
-    (imageCount > 1 ? `Hinh anh (${imageCount})` : imageCount === 1 ? "Hinh anh" : null);
+    (imageCount > 1
+      ? `Hinh anh (${imageCount})`
+      : imageCount === 1
+        ? "Hinh anh"
+        : null);
 
   conversation.set({
     seenBy: [],

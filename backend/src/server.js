@@ -35,6 +35,10 @@ const swaggerDocument = JSON.parse(fs.readFileSync("./src/swagger.json", "utf8")
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // public routes
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 app.use("/api/auth", authRoute);
 
 // private routes

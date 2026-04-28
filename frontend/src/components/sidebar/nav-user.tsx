@@ -68,10 +68,7 @@ export function NavUser({ user }: { user: User }) {
               >
                 <div className="relative">
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage
-                      src={user.avatarUrl}
-                      alt={user.displayName}
-                    />
+                    <AvatarImage src={user.avatarUrl} alt={user.displayName} />
                     <AvatarFallback className="rounded-lg">
                       {user.displayName.charAt(0)}
                     </AvatarFallback>
@@ -81,7 +78,9 @@ export function NavUser({ user }: { user: User }) {
                   )}
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.displayName}</span>
+                  <span className="truncate font-medium">
+                    {user.displayName}
+                  </span>
                   <span className="truncate text-xs">{user.username}</span>
                 </div>
                 <ChevronsUpDown className="ml-auto size-4" />
@@ -96,16 +95,15 @@ export function NavUser({ user }: { user: User }) {
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage
-                      src={user.avatarUrl}
-                      alt={user.username}
-                    />
+                    <AvatarImage src={user.avatarUrl} alt={user.username} />
                     <AvatarFallback className="rounded-lg">
                       {user.displayName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{user.displayName}</span>
+                    <span className="truncate font-medium">
+                      {user.displayName}
+                    </span>
                     <span className="truncate text-xs">{user.username}</span>
                   </div>
                 </div>
@@ -138,10 +136,7 @@ export function NavUser({ user }: { user: User }) {
         setOpen={setfriendRequestOpen}
       />
 
-      <ProfileDialog
-        open={profileOpen}
-        setOpen={setProfileOpen}
-      />
+      <ProfileDialog open={profileOpen} setOpen={setProfileOpen} />
     </>
   );
 }
