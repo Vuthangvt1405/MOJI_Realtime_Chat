@@ -31,6 +31,8 @@ api.interceptors.response.use(
     if (
       originalRequest.url.includes("/auth/signin") ||
       originalRequest.url.includes("/auth/signup") ||
+      originalRequest.url.includes("/auth/forgot-password") ||
+      originalRequest.url.includes("/auth/reset-password") ||
       originalRequest.url.includes("/auth/refresh")
     ) {
       return Promise.reject(error);

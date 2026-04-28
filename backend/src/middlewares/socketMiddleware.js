@@ -19,6 +19,10 @@ export const socketAuthMiddleware = async (socket, next) => {
       return next(new Error("User không tồn tại"));
     }
 
+    if (decoded.tokenVersion !== (user.tokenVersion ?? 0)) {
+      return next(new Error("Unauthorized - Token không hợp lệ hoặc đã hết hạn"));
+    }
+
     socket.user = user;
 
     next();

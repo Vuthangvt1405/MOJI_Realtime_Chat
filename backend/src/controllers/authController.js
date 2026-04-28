@@ -76,3 +76,33 @@ export const refreshToken = async (req, res) => {
     });
   }
 };
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const { useCases } = getContainer();
+    const response = await useCases.forgotPassword({ email });
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return handleError(res, error, {
+      logMessage: "Lỗi khi gọi forgotPassword",
+      fallbackMessage: "Lỗi hệ thống",
+    });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    const { useCases } = getContainer();
+    const response = await useCases.resetPassword({ token, newPassword });
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return handleError(res, error, {
+      logMessage: "Lỗi khi gọi resetPassword",
+      fallbackMessage: "Lỗi hệ thống",
+    });
+  }
+};

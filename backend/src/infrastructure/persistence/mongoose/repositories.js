@@ -4,6 +4,7 @@ import Conversation from "../../../models/Conversation.js";
 import Friend from "../../../models/Friend.js";
 import FriendRequest from "../../../models/FriendRequest.js";
 import Message from "../../../models/Message.js";
+import PasswordResetToken from "../../../models/PasswordResetToken.js";
 import Session from "../../../models/Session.js";
 import User from "../../../models/User.js";
 
@@ -246,6 +247,10 @@ export const repositories = {
     return User.findOne({ username });
   },
 
+  async findUserByEmail(email) {
+    return User.findOne({ email });
+  },
+
   async createUser(payload) {
     return User.create(payload);
   },
@@ -256,6 +261,14 @@ export const repositories = {
 
   async findBasicUserById(userId) {
     return User.findById(userId).select("_id username displayName avatarUrl").lean();
+  },
+
+  async updateUserPasswordById(userId, hashedPassword) {
+    return User.findByIdAndUpdate(userId, { hashedPassword });
+  },
+
+  async incrementUserTokenVersion(userId) {
+    return User.findByIdAndUpdate(userId, { $inc: { tokenVersion: 1 } });
   },
 
   async searchUsersByUsernamePrefix(username, currentUserId) {
@@ -290,6 +303,22 @@ export const repositories = {
 
   async findSessionByRefreshToken(refreshToken) {
     return Session.findOne({ refreshToken });
+  },
+
+  async deleteSessionsByUserId(userId) {
+    return Session.deleteMany({ userId });
+  },
+
+  async createPasswordResetToken(payload) {
+    return PasswordResetToken.create(payload);
+  },
+
+  async findPasswordResetTokenByHash(tokenHash) {
+    return PasswordResetToken.findOne({ tokenHash });
+  },
+
+  async deletePasswordResetTokensByUserId(userId) {
+    return PasswordResetToken.deleteMany({ userId });
   },
 
   async findFriendshipByPair(userA, userB) {

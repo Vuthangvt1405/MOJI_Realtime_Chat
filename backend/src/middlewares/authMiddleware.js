@@ -30,6 +30,12 @@ export const protectedRoute = (req, res, next) => {
         return res.status(404).json({ message: "người dùng không tồn tại." });
       }
 
+      if (decodedUser.tokenVersion !== (user.tokenVersion ?? 0)) {
+        return res
+          .status(403)
+          .json({ message: "Access token hết hạn hoặc không đúng" });
+      }
+
       // trả user về trong req
       req.user = user;
       next();

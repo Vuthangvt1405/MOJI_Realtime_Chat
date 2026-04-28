@@ -18,4 +18,12 @@ export const securityServices = {
   generateRefreshToken() {
     return crypto.randomBytes(64).toString("hex");
   },
+
+  generatePasswordResetToken() {
+    return crypto.randomBytes(32).toString("hex");
+  },
+
+  hashPasswordResetToken(token) {
+    return crypto.createHash("sha256").update(token).digest("hex");
+  },
 };

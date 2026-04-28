@@ -5,6 +5,7 @@ import { makeMessageUseCases } from "../application/chat/messageUseCases.js";
 import { makeFriendUseCases } from "../application/friend/friendUseCases.js";
 import { makeUserUseCases } from "../application/user/userUseCases.js";
 import { freeImageGateway } from "../infrastructure/media/freeImageGateway.js";
+import { smtpMailGateway } from "../infrastructure/notifications/smtpMailGateway.js";
 import { repositories } from "../infrastructure/persistence/mongoose/repositories.js";
 import { makeSocketGateway } from "../infrastructure/realtime/socketGateway.js";
 import { securityServices } from "../infrastructure/security/securityServices.js";
@@ -34,6 +35,7 @@ const createUseCases = () => {
   const authUseCases = makeAuthUseCases({
     repositories,
     securityServices,
+    mailGateway: smtpMailGateway,
   });
 
   const callUseCases = makeCallUseCases({
