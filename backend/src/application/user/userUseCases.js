@@ -46,4 +46,41 @@ export const makeUserUseCases = ({ repositories, imageGateway }) => ({
 
     return { avatarUrl: updatedUser.avatarUrl };
   },
+
+  async updateProfile({ userId, displayName, email, phone, bio }) {
+    if (!displayName || typeof displayName !== "string" || displayName.trim() === "") {
+      throw new AppError(400, "Tên hiển thị không được để trống");
+    }
+    if (!email || typeof email !== "string") {
+      throw new AppError(400, "Email không được để trống");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new AppError(400, "Email không hợp lệ");
+    }
+
+    if (bio && typeof bio === "string" && bio.length > 500) {
+      throw new AppError(400, "Giới thiệu không được vượt quá 500 ký tự");
+    }
+
+    const updates = {};
+    updates.displayName = displayName.trim();
+    updates.email = email.toLowerCase().trim();
+
+    if (phone !== undefined) {
+      updates.phone = phone;
+    }
+    if (bio !== undefined) {
+      updates.bio = bio.trim();
+    }
+
+    const updatedUser = await repositories.updateUserProfileById(userId, updates);
+
+    if (!updatedUser) {
+      throw new AppError(404, "Không tìm thấy người dùng");
+    }
+
+    return { user: updatedUser };
+  },
 });

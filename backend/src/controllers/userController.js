@@ -49,3 +49,25 @@ export const uploadAvatar = async (req, res) => {
     });
   }
 };
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { displayName, email, phone, bio } = req.body;
+    const { useCases } = getContainer();
+
+    const response = await useCases.updateProfile({
+      userId: req.user._id,
+      displayName,
+      email,
+      phone,
+      bio,
+    });
+
+    return res.status(200).json(response);
+  } catch (error) {
+    return handleError(res, error, {
+      logMessage: "Lỗi xảy ra khi updateProfile",
+      fallbackMessage: "Cập nhật hồ sơ thất bại",
+    });
+  }
+};

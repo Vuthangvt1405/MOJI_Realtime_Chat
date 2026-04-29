@@ -12,4 +12,14 @@ export const userService = {
 
     return res.data;
   },
+
+  updateProfile: async (data: {
+    displayName: string;
+    email: string;
+    phone?: string;
+    bio?: string;
+  }) => {
+    const res = await api.put("/users/me", data, { withCredentials: true });
+    return res.data.user;
+  },
 };

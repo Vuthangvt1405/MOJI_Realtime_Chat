@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { AppError } from "../../../shared/errors/AppError.js";
 
 import Conversation from "../../../models/Conversation.js";
 import Friend from "../../../models/Friend.js";
@@ -291,6 +292,20 @@ export const repositories = {
       { avatarUrl, avatarId },
       { new: true },
     ).select("avatarUrl");
+  },
+
+  async updateUserProfileById(userId, updates) {
+    try {
+      return await User.findByIdAndUpdate(userId, updates, {
+        new: true,
+        runValidators: true,
+      }).select("-hashedPassword");
+    } catch (error) {
+      if (error.code === 11000) {
+        throw new AppError(409, "Email đã được sử dụng bởi tài khoản khác");
+      }
+      throw error;
+    }
   },
 
   async createSession(payload) {
