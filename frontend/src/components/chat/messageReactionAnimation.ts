@@ -1,5 +1,12 @@
 import type { MessageReactionSummary } from "@/types/chat";
 
+export const REACTION_HOVER_DELAY_MS = 1200;
+
+interface ReactionBarVisibilityState {
+  isReactionBarOpen: boolean;
+  isReactionHoverVisible: boolean;
+}
+
 /**
  * Purpose:
  * Creates a stable signature for message reaction summaries.
@@ -64,9 +71,28 @@ export function getReactionAnimationEmoji(
 
   const newOwnReaction = nextByCount.find(
     (reaction) =>
-      reaction.reactedByMe &&
-      !previousByEmoji.get(reaction.emoji)?.reactedByMe,
+      reaction.reactedByMe && !previousByEmoji.get(reaction.emoji)?.reactedByMe,
   );
 
   return newOwnReaction?.emoji ?? nextByCount[0]?.emoji ?? null;
+}
+
+/**
+ * Purpose:
+ * Determines whether the quick reaction bar should be visible.
+ *
+ * How it works:
+ * It treats explicit openings, such as mobile long-press, and completed hover
+ * delays as equivalent reasons to show the bar.
+ *
+ * Parameters:
+ * - state: Current explicit-open and delayed-hover visibility flags.
+ *
+ * Returns:
+ * true when the quick reaction bar should be rendered as visible.
+ */
+export function getReactionBarVisibility(
+  state: ReactionBarVisibilityState,
+): boolean {
+  return state.isReactionBarOpen || state.isReactionHoverVisible;
 }

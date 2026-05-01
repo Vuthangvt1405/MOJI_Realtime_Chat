@@ -10,7 +10,9 @@ import { toast } from "sonner";
 import { useChatStore } from "@/stores/useChatStore";
 import {
   getReactionAnimationEmoji,
+  getReactionBarVisibility,
   getReactionSignature,
+  REACTION_HOVER_DELAY_MS,
 } from "./messageReactionAnimation";
 import UserAvatar from "./UserAvatar";
 import { Card } from "../ui/card";
@@ -36,9 +38,10 @@ interface MessageItemProps {
  *
  * How it works:
  * It derives display grouping and image URLs, opens a local image preview, shows
- * the quick reaction bar on hover/focus/long-press, renders a compact reaction
- * summary pill, animates reaction updates, lifts the active row above adjacent
- * animated rows, and delegates reaction mutations to the chat store.
+ * the quick reaction bar after delayed hover, immediate focus, or long-press,
+ * renders a compact reaction summary pill, animates reaction updates, lifts the
+ * active row above adjacent animated rows, and delegates reaction mutations to
+ * the chat store.
  *
  * Parameters:
  * - message: Chat message to render.
@@ -59,12 +62,16 @@ const MessageItem = ({
 }: MessageItemProps) => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isReactionBarOpen, setIsReactionBarOpen] = useState(false);
+  const [isReactionHoverVisible, setIsReactionHoverVisible] = useState(false);
   const [isReactionAnimating, setIsReactionAnimating] = useState(false);
   const [animatedReactionEmoji, setAnimatedReactionEmoji] = useState<
     string | null
   >(null);
   const [reactionAnimationKey, setReactionAnimationKey] = useState(0);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reactionHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const previousReactionSignatureRef = useRef<string | null>(null);
   const previousReactionSummariesRef = useRef<MessageReactionSummary[]>([]);
   const reactionAnimationTimerRef = useRef<ReturnType<
@@ -116,6 +123,10 @@ const MessageItem = ({
     (reaction) => reaction.reactedByMe,
   );
   const reactionSignature = getReactionSignature(reactionSummaries);
+  const isQuickReactionBarVisible = getReactionBarVisibility({
+    isReactionBarOpen,
+    isReactionHoverVisible,
+  });
 
   useEffect(() => {
     const previousSignature = previousReactionSignatureRef.current;
@@ -170,6 +181,10 @@ const MessageItem = ({
         clearTimeout(reactionAnimationTimerRef.current);
       }
 
+      if (reactionHoverTimerRef.current) {
+        clearTimeout(reactionHoverTimerRef.current);
+      }
+
       if (reactionAnimationFrameRef.current !== null) {
         window.cancelAnimationFrame(reactionAnimationFrameRef.current);
       }
@@ -182,7 +197,9 @@ const MessageItem = ({
    *
    * How it works:
    * Tapping the same emoji removes the reaction; tapping a different emoji
-   * replaces it through the store's API-backed reaction action.
+   * replaces it through the store's API-backed reaction action. After the
+   * mutation finishes, the reaction bar is hidden until the next eligible hover,
+   * focus, or long-press interaction.
    *
    * Parameters:
    * - emoji: Quick reaction emoji selected by the user.
@@ -199,10 +216,59 @@ const MessageItem = ({
       }
 
       setIsReactionBarOpen(false);
+      setIsReactionHoverVisible(false);
     } catch (error) {
       console.error("Lỗi khi reaction message:", error);
       toast.error("Reaction tin nhắn thất bại");
     }
+  };
+
+  /**
+   * Purpose:
+   * Starts the delayed desktop hover reveal for the quick reaction bar.
+   *
+   * How it works:
+   * It waits 1.2 seconds before marking the hover bar visible, and avoids
+   * stacking duplicate timers while the pointer remains on the same message.
+   *
+   * Parameters:
+   * none
+   *
+   * Returns:
+   * void
+   */
+  const startReactionHoverDelay = () => {
+    if (reactionHoverTimerRef.current || isReactionHoverVisible) {
+      return;
+    }
+
+    reactionHoverTimerRef.current = setTimeout(() => {
+      setIsReactionHoverVisible(true);
+      reactionHoverTimerRef.current = null;
+    }, REACTION_HOVER_DELAY_MS);
+  };
+
+  /**
+   * Purpose:
+   * Cancels and hides the desktop hover reaction bar.
+   *
+   * How it works:
+   * It clears a pending hover timer and resets hover-driven visibility when the
+   * pointer leaves the message area.
+   *
+   * Parameters:
+   * none
+   *
+   * Returns:
+   * void
+   */
+  const clearReactionHoverDelay = () => {
+    if (reactionHoverTimerRef.current) {
+      clearTimeout(reactionHoverTimerRef.current);
+      reactionHoverTimerRef.current = null;
+    }
+
+    setIsReactionHoverVisible(false);
   };
 
   /**
@@ -221,6 +287,7 @@ const MessageItem = ({
   const startReactionLongPress = () => {
     longPressTimerRef.current = setTimeout(() => {
       setIsReactionBarOpen(true);
+      setIsReactionHoverVisible(false);
       longPressTimerRef.current = null;
     }, 450);
   };
@@ -288,6 +355,8 @@ const MessageItem = ({
             )}
             tabIndex={0}
             aria-label="Message reaction controls"
+            onMouseEnter={startReactionHoverDelay}
+            onMouseLeave={clearReactionHoverDelay}
             onTouchStart={startReactionLongPress}
             onTouchEnd={clearReactionLongPress}
             onTouchCancel={clearReactionLongPress}
@@ -296,9 +365,9 @@ const MessageItem = ({
               className={cn(
                 "absolute -top-9 z-50 flex items-center gap-1 rounded-full border bg-background/95 px-1.5 py-1 shadow-lg backdrop-blur transition-opacity",
                 message.isOwn ? "right-0" : "left-0",
-                isReactionBarOpen
+                isQuickReactionBarVisible
                   ? "opacity-100"
-                  : "pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100",
+                  : "pointer-events-none opacity-0 group-focus-within:pointer-events-auto group-focus-within:opacity-100",
               )}
             >
               {QUICK_REACTION_EMOJIS.map((emoji) => (

@@ -3,7 +3,9 @@ import { test } from "node:test";
 import type { MessageReactionSummary } from "../src/types/chat.ts";
 import {
   getReactionAnimationEmoji,
+  getReactionBarVisibility,
   getReactionSignature,
+  REACTION_HOVER_DELAY_MS,
 } from "../src/components/chat/messageReactionAnimation.ts";
 
 /**
@@ -62,4 +64,32 @@ test("reaction animation emoji returns null when no reactions remain", () => {
   const previous = [summary("👍", 1, ["a"], true)];
 
   assert.equal(getReactionAnimationEmoji(previous, []), null);
+});
+
+test("reaction bar hover delay is 1.2 seconds", () => {
+  assert.equal(REACTION_HOVER_DELAY_MS, 1200);
+});
+
+test("reaction bar remains visible for explicit and delayed hover states", () => {
+  assert.equal(
+    getReactionBarVisibility({
+      isReactionBarOpen: true,
+      isReactionHoverVisible: false,
+    }),
+    true,
+  );
+  assert.equal(
+    getReactionBarVisibility({
+      isReactionBarOpen: false,
+      isReactionHoverVisible: true,
+    }),
+    true,
+  );
+  assert.equal(
+    getReactionBarVisibility({
+      isReactionBarOpen: false,
+      isReactionHoverVisible: false,
+    }),
+    false,
+  );
 });
