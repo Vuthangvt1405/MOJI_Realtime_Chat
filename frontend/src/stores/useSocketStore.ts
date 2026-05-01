@@ -3,12 +3,27 @@ import { io, type Socket } from "socket.io-client";
 import { useAuthStore } from "./useAuthStore";
 import type { SocketState } from "@/types/store";
 import { useChatStore } from "./useChatStore";
+import type { MessageReactionUpdate } from "@/types/chat";
 
 const baseURL = import.meta.env.VITE_SOCKET_URL;
 
 export const useSocketStore = create<SocketState>((set, get) => ({
   socket: null,
   onlineUsers: [],
+  /**
+   * Purpose:
+   * Opens the authenticated Socket.IO connection for realtime chat state.
+   *
+   * How it works:
+   * It reuses an existing socket when present, connects with the current auth
+   * token, registers chat/conversation event listeners, and stores online users.
+   *
+   * Parameters:
+   * none
+   *
+   * Returns:
+   * void
+   */
   connectSocket: () => {
     const accessToken = useAuthStore.getState().accessToken;
     const existingSocket = get().socket;
@@ -22,6 +37,20 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
     let syncMissingConversationPromise: Promise<void> | null = null;
 
+    /**
+     * Purpose:
+     * Ensures a socket event references a conversation already loaded locally.
+     *
+     * How it works:
+     * It checks the chat store for the conversation ID and coalesces missing
+     * conversation reloads so simultaneous events share one fetch request.
+     *
+     * Parameters:
+     * - conversationId: ID received from a socket event payload.
+     *
+     * Returns:
+     * Promise<void>
+     */
     const ensureConversationInStore = async (conversationId: string) => {
       const conversationExists = useChatStore
         .getState()
@@ -59,6 +88,10 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     // online users
     socket.on("online-users", (userIds) => {
       set({ onlineUsers: userIds });
+    });
+
+    socket.on("message-reaction-updated", (update: MessageReactionUpdate) => {
+      useChatStore.getState().applyMessageReactionUpdate(update);
     });
 
     // new message
@@ -121,6 +154,20 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       socket.emit("join-conversation", conversation._id);
     });
   },
+  /**
+   * Purpose:
+   * Closes the active Socket.IO connection.
+   *
+   * How it works:
+   * It reads the current socket from Zustand state, disconnects it when present,
+   * and clears the stored socket reference.
+   *
+   * Parameters:
+   * none
+   *
+   * Returns:
+   * void
+   */
   disconnectSocket: () => {
     const socket = get().socket;
     if (socket) {

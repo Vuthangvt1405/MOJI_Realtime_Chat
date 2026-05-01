@@ -44,6 +44,39 @@ export interface ConversationResponse {
   conversations: Conversation[];
 }
 
+export type MessageReactionEmoji = "👍" | "❤️" | "😂" | "😮" | "😢" | "🔥";
+
+export interface MessageReactionUser {
+  _id: string;
+  username?: string;
+  displayName: string;
+  avatarUrl?: string | null;
+}
+
+export interface MessageReactionSummary {
+  emoji: MessageReactionEmoji | string;
+  count: number;
+  reactedByMe: boolean;
+  users: MessageReactionUser[];
+}
+
+export interface MessageReactionUpdate {
+  messageId: string;
+  conversationId: string;
+  reactions: MessageReactionSummary[];
+  conversation?: {
+    _id: string;
+    lastMessage: {
+      _id: string;
+      content: string | null;
+      senderId?: string;
+      createdAt: string;
+    };
+    lastMessageAt: string;
+  };
+  unreadCounts?: Record<string, number>;
+}
+
 export interface Message {
   _id: string;
   conversationId: string;
@@ -54,4 +87,5 @@ export interface Message {
   updatedAt?: string | null;
   createdAt: string;
   isOwn?: boolean;
+  reactions?: MessageReactionSummary[];
 }

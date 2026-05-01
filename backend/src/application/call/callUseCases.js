@@ -6,7 +6,32 @@ const invalidPayload = {
   message: "Dữ liệu gọi không hợp lệ",
 };
 
+/**
+ * Purpose:
+ * Creates call use case for validating whether a call can be initiated.
+ *
+ * How it works:
+ * Provides validateCallRequest which checks payload validity, self-call,
+ * callee existence, friendship requirement, and direct conversation match.
+ */
 export const makeCallUseCases = ({ repositories }) => ({
+  /**
+   * Purpose:
+   * Validates whether a user can start a call with another user.
+   *
+   * How it works:
+   * Checks: valid payload, not self-call, callee exists in DB,
+   * users are friends, and conversation is a direct conversation
+   * between the two users.
+   *
+   * Parameters:
+   * - callerId: initiating user ID
+   * - calleeId: target user ID
+   * - conversationId: conversation where call happens
+   *
+   * Returns:
+   * Object { allowed: boolean, code?: string, message?: string }
+   */
   async validateCallRequest({ callerId, calleeId, conversationId }) {
     const callerKey = callerId?.toString?.() || "";
     const calleeKey = calleeId?.toString?.() || "";

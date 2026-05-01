@@ -1,3 +1,12 @@
+/**
+ * Conversation routes.
+ *
+ * POST   /                        — create conversation (direct or group)
+ * GET    /                        — list user conversations
+ * GET    /:conversationId/messages — paginated message history
+ * PATCH  /:conversationId/seen    — mark conversation as read
+ * PATCH  /:conversationId/clear   — soft-delete conversation for user
+ */
 import express from "express";
 import {
   clearConversationForUser,

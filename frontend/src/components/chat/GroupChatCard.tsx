@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useChatStore } from "@/stores/useChatStore";
 import type { Conversation } from "@/types/chat";
+import { cn } from "@/lib/utils";
 import ChatCard from "./ChatCard";
 import UnreadCountBadge from "./UnreadCountBadge";
 import GroupChatAvatar from "./GroupChatAvatar";
@@ -20,6 +21,8 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
 
   const unreadCount = convo.unreadCounts[user._id];
   const name = convo.group?.name ?? "";
+  const lastMessageContent = convo.lastMessage?.content;
+  const subtitleText = lastMessageContent || `${convo.participants.length} thành viên`;
   const handleSelectConversation = async (id: string) => {
     setActiveConversation(id);
     if (!messages[id]) {
@@ -76,8 +79,15 @@ const GroupChatCard = ({ convo }: { convo: Conversation }) => {
         </>
       }
       subtitle={
-        <p className="text-sm truncate text-muted-foreground">
-          {convo.participants.length} thành viên
+        <p
+          className={cn(
+            "text-sm truncate",
+            unreadCount > 0
+              ? "font-bold text-black dark:text-white"
+              : "text-muted-foreground",
+          )}
+        >
+          {subtitleText}
         </p>
       }
       onDelete={handleDeleteConversation}

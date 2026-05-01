@@ -26,11 +26,31 @@ import type {
   IncomingCallPayload,
 } from "./types";
 
+/**
+ * Checks if an incoming event matches the currently active call.
+ * Prevents stale events from affecting a different call.
+ */
 const isCurrentCall = (callId: string) => {
   const activeCallId = useCallStore.getState().callId;
   return Boolean(activeCallId && activeCallId === callId);
 };
 
+/**
+ * Purpose:
+ * Cleans up WebRTC resources and transitions the call to ended state.
+ *
+ * How it works:
+ * Calls cleanupWebRtc to close peer connection and stop media tracks,
+ * then resets local/remote streams and records the end reason.
+ *
+ * Parameters:
+ * - reason: string description (e.g. "busy", "declined", "failed")
+ * - errorCode: optional machine-readable error code
+ * - errorMessage: optional human-readable error message
+ *
+ * Returns:
+ * void
+ */
 const endLocalCall = ({ reason, errorCode, errorMessage }: {
   reason?: string;
   errorCode?: string;
@@ -44,6 +64,23 @@ const endLocalCall = ({ reason, errorCode, errorMessage }: {
   setEnded({ reason, errorCode, errorMessage });
 };
 
+/**
+ * Purpose:
+ * Creates a WebRTC peer connection and wires socket-based signaling.
+ *
+ * How it works:
+ * Creates RTCPeerConnection with ICE config, registers callbacks for
+ * local ICE candidates (sent via socket to peer), remote stream
+ * arrival, and connection state changes (failure triggers endLocalCall).
+ *
+ * Parameters:
+ * - socket: Socket.IO instance for signaling
+ * - callId: current call ID
+ * - peerUserId: remote user ID for signaling events
+ *
+ * Returns:
+ * void
+ */
 const setupPeerConnection = (socket: Socket, callId: string, peerUserId: string) => {
   createPeerConnection({
     onIceCandidate: (candidate) => {
@@ -66,12 +103,34 @@ const setupPeerConnection = (socket: Socket, callId: string, peerUserId: string)
   });
 };
 
+/**
+ * Purpose:
+ * Registers all call-related Socket.IO event listeners for WebRTC signaling.
+ *
+ * How it works:
+ * In a useEffect, subscribes to 11 socket events (incoming, accepted, offer,
+ * answer, ice-candidate, rejected, busy, user-offline, timeout, ended, error).
+ * Each handler checks isCurrentCall to ignore stale events, then drives the
+ * WebRTC flow (create/answer offers, add ICE candidates, handle failures).
+ * Cleanup unregisters all listeners on unmount or socket change.
+ *
+ * Parameters:
+ * - socket: Socket.IO instance (null disables all listeners)
+ *
+ * Returns:
+ * void
+ */
 export const useCallSocket = (socket: Socket | null) => {
   useEffect(() => {
     if (!socket) {
       return;
     }
 
+    /**
+     * Handles call:incoming — remote user is calling.
+     * If local user is not idle, auto-rejects with "busy".
+     * Otherwise, stores incoming call data for the IncomingCallModal.
+     */
     const handleIncomingCall = (payload: IncomingCallPayload) => {
       const { status, setIncomingCall } = useCallStore.getState();
 
@@ -93,6 +152,11 @@ export const useCallSocket = (socket: Socket | null) => {
       });
     };
 
+    /**
+     * Handles call:accepted — callee answered; proceed with WebRTC offer.
+     * Creates peer connection, gets local media stream, creates and
+     * sends SDP offer to the remote peer via socket.
+     */
     const handleCallAccepted = async (payload: CallAcceptedPayload) => {
       if (!isCurrentCall(payload.callId)) {
         return;
@@ -137,6 +201,11 @@ export const useCallSocket = (socket: Socket | null) => {
       }
     };
 
+    /**
+     * Handles call:offer — received SDP offer from caller.
+     * Creates peer connection, sets remote description (offer),
+     * creates and sends SDP answer back to caller.
+     */
     const handleOffer = async (payload: CallOfferPayload) => {
       if (!isCurrentCall(payload.callId)) {
         return;
@@ -181,6 +250,10 @@ export const useCallSocket = (socket: Socket | null) => {
       }
     };
 
+    /**
+     * Handles call:answer — received SDP answer from callee.
+     * Sets it as remote description so media starts flowing.
+     */
     const handleAnswer = async (payload: CallAnswerPayload) => {
       if (!isCurrentCall(payload.callId)) {
         return;
@@ -197,6 +270,10 @@ export const useCallSocket = (socket: Socket | null) => {
       }
     };
 
+    /**
+     * Handles call:ice-candidate — received remote ICE candidate.
+     * Adds candidate to peer connection (queued if remote desc not set yet).
+     */
     const handleCandidate = async (payload: CallIceCandidatePayload) => {
       if (!isCurrentCall(payload.callId)) {
         return;
@@ -213,6 +290,9 @@ export const useCallSocket = (socket: Socket | null) => {
       }
     };
 
+    /**
+     * Handles call:rejected — remote user declined the call.
+     */
     const handleRejected = (payload: CallRejectedPayload) => {
       if (!isCurrentCall(payload.callId)) {
         return;
@@ -221,6 +301,9 @@ export const useCallSocket = (socket: Socket | null) => {
       endLocalCall({ reason: payload.reason || "declined" });
     };
 
+    /**
+     * Handles call:busy — remote user is already in a call.
+     */
     const handleBusy = (payload: CallBusyPayload) => {
       if (!isCurrentCall(payload.callId)) {
         return;
@@ -229,6 +312,9 @@ export const useCallSocket = (socket: Socket | null) => {
       endLocalCall({ reason: "busy" });
     };
 
+    /**
+     * Handles call:user-offline — remote user is not connected.
+     */
     const handleOffline = (payload: CallUserOfflinePayload) => {
       if (!isCurrentCall(payload.callId)) {
         return;
@@ -237,6 +323,9 @@ export const useCallSocket = (socket: Socket | null) => {
       endLocalCall({ reason: "user-offline" });
     };
 
+    /**
+     * Handles call:timeout — callee did not answer in time.
+     */
     const handleTimeout = (payload: CallTimeoutPayload) => {
       if (!isCurrentCall(payload.callId)) {
         return;
@@ -245,6 +334,9 @@ export const useCallSocket = (socket: Socket | null) => {
       endLocalCall({ reason: payload.reason || "no-answer" });
     };
 
+    /**
+     * Handles call:ended — remote user ended the call.
+     */
     const handleEnded = (payload: CallEndedPayload) => {
       if (!isCurrentCall(payload.callId)) {
         return;
@@ -253,6 +345,9 @@ export const useCallSocket = (socket: Socket | null) => {
       endLocalCall({ reason: payload.reason || "ended" });
     };
 
+    /**
+     * Handles call:error — server-side error during call setup.
+     */
     const handleCallError = (payload: CallErrorPayload) => {
       const currentCallId = useCallStore.getState().callId;
 

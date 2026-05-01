@@ -1,5 +1,5 @@
 import type { Socket } from "socket.io-client";
-import type { Conversation, Message } from "./chat";
+import type { Conversation, Message, MessageReactionUpdate } from "./chat";
 import type { Friend, FriendRequest, User } from "./user";
 
 export interface AuthState {
@@ -60,6 +60,9 @@ export interface ChatState {
   ) => Promise<void>;
   // add message
   addMessage: (message: Message) => Promise<void>;
+  setMessageReaction: (messageId: string, emoji: string) => Promise<void>;
+  removeMessageReaction: (messageId: string) => Promise<void>;
+  applyMessageReactionUpdate: (update: MessageReactionUpdate) => void;
   // update convo
   updateConversation: (conversation: Partial<Conversation>) => void;
   markAsSeen: () => Promise<void>;

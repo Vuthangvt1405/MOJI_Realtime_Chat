@@ -2,6 +2,7 @@ import { getCallRingTimeoutMs } from "./callConfig.js";
 
 const VALID_CALL_TYPES = new Set(["video", "audio"]);
 
+/** Safely converts a value to its string representation for use as a user key. */
 const toUserKey = (value) => {
   if (value === null || value === undefined) {
     return "";
@@ -10,6 +11,16 @@ const toUserKey = (value) => {
   return value.toString();
 };
 
+/**
+ * Purpose:
+ * Emits a call:error event to the calling socket.
+ *
+ * Parameters:
+ * - socket: the caller's Socket.IO socket
+ * - callId: the call's ID (may be null)
+ * - code: machine-readable error code
+ * - message: human-readable error message
+ */
 const emitError = (socket, callId, code, message) => {
   socket.emit("call:error", {
     callId,
@@ -18,6 +29,23 @@ const emitError = (socket, callId, code, message) => {
   });
 };
 
+/**
+ * Purpose:
+ * Sends an event to a specific user via their socket room.
+ *
+ * How it works:
+ * Looks up the user's socket ID from onlineUsers map, emits if found.
+ *
+ * Parameters:
+ * - io: Socket.IO server instance
+ * - onlineUsers: Map<userId, socketId>
+ * - userId: target user ID
+ * - event: event name string
+ * - payload: data to send
+ *
+ * Returns:
+ * Boolean — true if user was online and message sent, false otherwise.
+ */
 const emitToUser = (io, onlineUsers, userId, event, payload) => {
   const targetSocketId = onlineUsers.get(toUserKey(userId));
 
@@ -29,6 +57,17 @@ const emitToUser = (io, onlineUsers, userId, event, payload) => {
   return true;
 };
 
+/**
+ * Purpose:
+ * Validates a WebRTC signaling payload has required fields.
+ *
+ * Parameters:
+ * - payload: the incoming signal object
+ * - fieldName: the signal-specific field to check (offer/answer/candidate)
+ *
+ * Returns:
+ * Boolean
+ */
 const isValidSignalPayload = (payload, fieldName) => {
   if (!payload || typeof payload !== "object") {
     return false;
@@ -41,6 +80,27 @@ const isValidSignalPayload = (payload, fieldName) => {
   return payload[fieldName] !== undefined;
 };
 
+/**
+ * Purpose:
+ * Registers all call-related socket event handlers for a connected user.
+ *
+ * How it works:
+ * Listens for call:request (initiate), call:accept, call:reject,
+ * call:offer/answer/ice-candidate (WebRTC relay), call:end (hangup),
+ * and disconnect (cleanup). Manages call sessions via callStore and
+ * routes signals between peers via onlineUsers socket map.
+ *
+ * Parameters:
+ * - io: Socket.IO server instance
+ * - socket: the connected user's socket
+ * - onlineUsers: Map<userId, socketId> for routing
+ * - callStore: call session store (pending/active state)
+ * - canStartCall: async function to validate call eligibility
+ * - getRingTimeoutMs: function returning timeout duration
+ *
+ * Returns:
+ * void
+ */
 export const registerCallSocket = ({
   io,
   socket,

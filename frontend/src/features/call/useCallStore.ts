@@ -68,6 +68,23 @@ const baseState = {
 export const useCallStore = create<CallState>((set) => ({
   ...baseState,
 
+  /**
+   * Purpose:
+   * Initializes state for an outgoing call (caller side).
+   *
+   * How it works:
+   * Sets status to "calling", role to "caller", and stores call metadata.
+   * Resets any previous ended/error state.
+   *
+   * Parameters:
+   * - callId: generated unique call ID
+   * - conversationId: the conversation to call in
+   * - peerUserId: the user being called
+   * - callType: "video" or "audio"
+   *
+   * Returns:
+   * void
+   */
   startOutgoingCall: ({ callId, conversationId, peerUserId, callType }) =>
     set({
       status: "calling",
@@ -85,6 +102,23 @@ export const useCallStore = create<CallState>((set) => ({
       cameraEnabled: callType === "video",
     }),
 
+  /**
+   * Purpose:
+   * Initializes state for an incoming call (callee side).
+   *
+   * How it works:
+   * Sets status to "incoming", role to "callee", and stores the caller's info.
+   * The IncomingCallModal UI reads this state to show accept/reject UI.
+   *
+   * Parameters:
+   * - callId: call ID from the server
+   * - conversationId: conversation the call is in
+   * - fromUserId: the calling user's ID
+   * - callType: "video" or "audio"
+   *
+   * Returns:
+   * void
+   */
   setIncomingCall: ({ callId, conversationId, fromUserId, callType }) =>
     set({
       status: "incoming",
@@ -102,18 +136,58 @@ export const useCallStore = create<CallState>((set) => ({
       cameraEnabled: callType === "video",
     }),
 
+  /**
+   * Purpose:
+   * Transitions call status to "connecting" while WebRTC setup runs.
+   */
   setConnecting: () => set({ status: "connecting" }),
 
+  /**
+   * Purpose:
+   * Transitions call status to "in-call" (media flowing).
+   */
   setInCall: () => set({ status: "in-call" }),
 
+  /**
+   * Purpose:
+   * Stores the local MediaStream for rendering local video preview.
+   */
   setLocalStream: (stream) => set({ localStream: stream }),
 
+  /**
+   * Purpose:
+   * Stores the remote MediaStream for rendering the peer's video.
+   */
   setRemoteStream: (stream) => set({ remoteStream: stream }),
 
+  /**
+   * Purpose:
+   * Enables or disables the local microphone.
+   */
   setMicEnabled: (enabled) => set({ micEnabled: enabled }),
 
+  /**
+   * Purpose:
+   * Enables or disables the local camera.
+   */
   setCameraEnabled: (enabled) => set({ cameraEnabled: enabled }),
 
+  /**
+   * Purpose:
+   * Transitions the call to "ended" and records the termination reason.
+   *
+   * How it works:
+   * Resets to baseState and sets status to "ended" with optional error details.
+   * The call window/UI reads endedReason/errorCode to show appropriate feedback.
+   *
+   * Parameters:
+   * - payload.reason: termination reason string
+   * - payload.errorCode: optional machine-readable error code
+   * - payload.errorMessage: optional human-readable error message
+   *
+   * Returns:
+   * void
+   */
   setEnded: (payload = {}) =>
     set({
       ...baseState,
@@ -123,5 +197,9 @@ export const useCallStore = create<CallState>((set) => ({
       errorMessage: payload.errorMessage || null,
     }),
 
+  /**
+   * Purpose:
+   * Fully resets the call state to idle (no active or ended call).
+   */
   resetCall: () => set({ ...baseState }),
 }));
